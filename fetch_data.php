@@ -88,7 +88,6 @@ $result = $conn->query($sql);
                         <label for="quantity_filter" class="form-label">Quantity:</label>
                         <input type="text" class="form-control" id="quantity_filter" name="quantity_filter" value="<?php echo $filters['quantity']; ?>">
                     </div>
-                    <!-- Add more filter input fields for other fields -->
                     <div class="col-md-2 align-self-end">
                         <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
                     </div>
@@ -100,7 +99,8 @@ $result = $conn->query($sql);
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Serial Number</th>
+                        <th>Date</th>
                         <th>Party Name</th>
                         <th>Job</th>
                         <th>Quantity</th>
@@ -108,7 +108,6 @@ $result = $conn->query($sql);
                         <th>Amount</th>
                         <th>Designing</th>
                         <th>Size</th>
-                        <th>Date</th>
                         <th>Total Amount</th>
                         <th>RVD</th>
                         <th>Pending</th>
@@ -119,9 +118,11 @@ $result = $conn->query($sql);
                 <tbody>
                     <?php
                     if ($result->num_rows > 0) {
+                        $serialNumber = 1;
                         while ($row = $result->fetch_assoc()) {
                             echo "<tr>";
-                            echo "<td>" . $row['id'] . "</td>";
+                            echo "<td>" . $serialNumber . "</td>";
+                            echo "<td>" . $row['Date'] . "</td>";
                             echo "<td>" . $row['party_name'] . "</td>";
                             echo "<td>" . $row['job'] . "</td>";
                             echo "<td>" . $row['quantity'] . "</td>";
@@ -129,18 +130,23 @@ $result = $conn->query($sql);
                             echo "<td>" . $row['amount'] . "</td>";
                             echo "<td>" . $row['Designing'] . "</td>";
                             echo "<td>" . $row['size'] . "</td>";
-                            echo "<td>" . $row['Date'] . "</td>";
                             echo "<td>" . $row['total_amount'] . "</td>";
                             echo "<td>" . $row['RVD'] . "</td>";
-                            echo "<td>" . ($row['Pending'] == 1 ? 'Pending' : 'Not Pending') . "</td>";
+                            
+                            // Automatically set "Pending" status based on "RVD"
+                            $pendingStatus = ($row['RVD'] === null || $row['RVD'] == 0) ? 'Pending' : 'Not Pending';
+                            echo "<td>" . $pendingStatus . "</td>";
+                            
                             echo "<td>" . $row['remark'] . "</td>";
                             echo "<td>
-                                    <form method='post'>
+                                    <form method='post' class='d-inline'>
                                         <input type='hidden' name='delete_id' value='" . $row['id'] . "'>
                                         <button type='submit' name='delete' class='btn btn-danger btn-sm'>Delete</button>
                                     </form>
+                                    <a href='edit_entry.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'>Edit</a>
                                   </td>";
                             echo "</tr>";
+                            $serialNumber++;
                         }
                     } else {
                         echo "<tr><td colspan='14'>No data available</td></tr>";
@@ -150,9 +156,9 @@ $result = $conn->query($sql);
             </table>
         </div>
         <div class="mt-3">
-    <a href="export_pdf.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as PDF</a>
-    <a href="export_excel.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as Excel</a>
-</div>
+            <a href="export_pdf.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as PDF</a>
+            <a href="export_excel.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as Excel</a>
+        </div>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </div>
 </body>
