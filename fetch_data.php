@@ -20,19 +20,18 @@ if (isset($_POST['delete'])) {
     }
 }
 
-// Define filter variables and get filter values from GET parameters
 $filters = array(
     'party_name' => $_GET['party_filter'] ?? '',
     'job' => $_GET['job_filter'] ?? '',
     'quantity' => $_GET['quantity_filter'] ?? '',
     'quality' => $_GET['quality_filter'] ?? '',
     'amount' => $_GET['amount_filter'] ?? '',
-    'Designing' => $_GET['designing_filter'] ?? '',
+    'Designing' => $_GET['designing_filter'] ?? '', // Use "designing" instead of "Designing"
     'size' => $_GET['size_filter'] ?? '',
-    'Date' => $_GET['date_filter'] ?? '',
+    'date' => $_GET['date_filter'] ?? '',
     'total_amount' => $_GET['total_amount_filter'] ?? '',
-    'RVD' => $_GET['rvd_filter'] ?? '',
-    'Pending' => $_GET['pending_filter'] ?? '',
+    'RVD' => $_GET['rvd_filter'] ?? '', // Use "rvd" instead of "RVD"
+    'Pending' => $_GET['pending_filter'] ?? '', // Use "pending" instead of "Pending"
     'remark' => $_GET['remark_filter'] ?? ''
 );
 
@@ -61,6 +60,19 @@ $result = $conn->query($sql);
         .navbar {
             margin-bottom: 20px;
         }
+        .filters {
+            margin-bottom: 20px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            max-width: 100%;
+        }
+        th, td {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -75,7 +87,6 @@ $result = $conn->query($sql);
         <div class="filters mt-3">
             <form method="get">
                 <div class="row g-3">
-                    <!-- Add filter input fields for each field -->
                     <div class="col-md-2">
                         <label for="party_filter" class="form-label">Party Name:</label>
                         <input type="text" class="form-control" id="party_filter" name="party_filter" value="<?php echo $filters['party_name']; ?>">
@@ -88,7 +99,47 @@ $result = $conn->query($sql);
                         <label for="quantity_filter" class="form-label">Quantity:</label>
                         <input type="text" class="form-control" id="quantity_filter" name="quantity_filter" value="<?php echo $filters['quantity']; ?>">
                     </div>
-                    <div class="col-md-2 align-self-end">
+                    <div class="col-md-2">
+                        <label for="quality_filter" class="form-label">Quality:</label>
+                        <input type="text" class="form-control" id="quality_filter" name="quality_filter" value="<?php echo $filters['quality']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="amount_filter" class="form-label">Amount:</label>
+                        <input type="text" class="form-control" id="amount_filter" name="amount_filter" value="<?php echo $filters['amount']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="designing_filter" class="form-label">Designing:</label>
+                        <input type="text" class="form-control" id="designing_filter" name="designing_filter" value="<?php echo $filters['Designing']; ?>">
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="size_filter" class="form-label">Size:</label>
+                        <input type="text" class="form-control" id="size_filter" name="size_filter" value="<?php echo $filters['size']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_filter" class="form-label">Date:</label>
+                        <input type="text" class="form-control" id="date_filter" name="date_filter" value="<?php echo $filters['date']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="total_amount_filter" class="form-label">Total Amount:</label>
+                        <input type="text" class="form-control" id="total_amount_filter" name="total_amount_filter" value="<?php echo $filters['total_amount']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="rvd_filter" class="form-label">RVD:</label>
+                        <input type="text" class="form-control" id="rvd_filter" name="rvd_filter" value="<?php echo $filters['RVD']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pending_filter" class="form-label">Pending:</label>
+                        <input type="text" class="form-control" id="pending_filter" name="pending_filter" value="<?php echo $filters['Pending']; ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="remark_filter" class="form-label">Remark:</label>
+                        <input type="text" class="form-control" id="remark_filter" name="remark_filter" value="<?php echo $filters['remark']; ?>">
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-2">
                         <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
                     </div>
                 </div>
@@ -128,15 +179,11 @@ $result = $conn->query($sql);
                             echo "<td>" . $row['quantity'] . "</td>";
                             echo "<td>" . $row['quality'] . "</td>";
                             echo "<td>" . $row['amount'] . "</td>";
-                            echo "<td>" . $row['Designing'] . "</td>";
+                            echo "<td>" . (isset($row['Designing']) ? $row['Designing'] : '') . "</td>";
                             echo "<td>" . $row['size'] . "</td>";
                             echo "<td>" . $row['total_amount'] . "</td>";
-                            echo "<td>" . $row['RVD'] . "</td>";
-                            
-                            // Automatically set "Pending" status based on "RVD"
-                            $pendingStatus = ($row['RVD'] === null || $row['RVD'] == 0) ? 'Pending' : 'Not Pending';
-                            echo "<td>" . $pendingStatus . "</td>";
-                            
+                            echo "<td>" . (isset($row['RVD']) ? $row['RVD'] : '') . "</td>";
+                            echo "<td>" . (isset($row['Pending']) ? $row['Pending'] : '') . "</td>";
                             echo "<td>" . $row['remark'] . "</td>";
                             echo "<td>
                                     <form method='post' class='d-inline'>
@@ -155,10 +202,9 @@ $result = $conn->query($sql);
                 </tbody>
             </table>
         </div>
-        <div class="mt-3">
-            <a href="export_pdf.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as PDF</a>
-            <a href="export_excel.php<?php echo $filterQuery; ?>" class="btn btn-primary">Export as Excel</a>
-        </div>
+        <!-- Inside the <div class="mt-3"> section -->
+<a href="print_page.php<?php echo $filterQuery; ?>" class="btn btn-primary">Print</a>
+
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </div>
 </body>
