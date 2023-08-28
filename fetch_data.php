@@ -1,4 +1,12 @@
 <?php
+session_start();
+
+// Check if the user is logged in
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
 $servername = "mydb.cp8x2sonvqsb.eu-north-1.rds.amazonaws.com";
 $username = "admin";
 $password = "ashu1234";
@@ -26,23 +34,24 @@ $filters = array(
     'quantity' => $_GET['quantity_filter'] ?? '',
     'quality' => $_GET['quality_filter'] ?? '',
     'amount' => $_GET['amount_filter'] ?? '',
-    'Designing' => $_GET['designing_filter'] ?? '', // Use "designing" instead of "Designing"
+    'Designing' => $_GET['designing_filter'] ?? '',
     'size' => $_GET['size_filter'] ?? '',
     'date' => $_GET['date_filter'] ?? '',
     'total_amount' => $_GET['total_amount_filter'] ?? '',
-    'RVD' => $_GET['rvd_filter'] ?? '', // Use "rvd" instead of "RVD"
-    'Pending' => $_GET['pending_filter'] ?? '', // Use "pending" instead of "Pending"
+    'RVD' => $_GET['rvd_filter'] ?? '',
+    'Pending' => $_GET['pending_filter'] ?? '',
     'remark' => $_GET['remark_filter'] ?? ''
 );
 
-$filterQuery = "";
+$filterQuery = " WHERE 1"; // Start with a WHERE clause
+
 foreach ($filters as $field => $value) {
     if (!empty($value)) {
         $filterQuery .= " AND $field LIKE '%$value%'";
     }
 }
 
-$sql = "SELECT * FROM data_entry WHERE 1" . $filterQuery;
+$sql = "SELECT * FROM data_entry" . $filterQuery;
 $result = $conn->query($sql);
 ?>
 
@@ -54,7 +63,7 @@ $result = $conn->query($sql);
     <title>Display Data</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-        body {
+   body {
             padding: 20px;
         }
         .navbar {
@@ -73,17 +82,75 @@ $result = $conn->query($sql);
         th, td {
             white-space: nowrap;
         }
+        .no-print{
+            display:none;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
     </style>
+    
+   <script>
+        function toggleElementsForPrint() {
+            var navbar = document.querySelector('.navbar');
+            var filters = document.querySelector('.filters');
+            var printButton = document.querySelector('.print-button');
+            var editButtons = document.querySelectorAll('.edit-button');
+            var deleteButtons = document.querySelectorAll('.delete-button');
+            
+            if (navbar.style.display === 'none') {
+                navbar.style.display = 'block';
+                filters.style.display = 'block';
+                printButton.textContent = 'Print';
+                
+                // Make edit and delete buttons visible again
+                editButtons.forEach(function(button) {
+                    button.style.display = 'inline-block';
+                });
+                deleteButtons.forEach(function(button) {
+                    button.style.display = 'inline-block';
+                });
+            } else {
+                navbar.style.display = 'none';
+                filters.style.display = 'none';
+                printButton.textContent = 'Back to View';
+                
+                // Hide edit and delete buttons when printing
+                editButtons.forEach(function(button) {
+                    button.style.display = 'none';
+                });
+                deleteButtons.forEach(function(button) {
+                    button.style.display = 'none';
+                });
+            }
+        }
+        
+        function printTableWithSettings() {
+            var printContent = document.getElementById('print-content');
+            var originalContent = document.body.innerHTML;
+            
+            document.body.innerHTML = printContent.innerHTML;
+            window.print();
+            
+            document.body.innerHTML = originalContent;
+        }
+    </script>
+
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
             <a class="navbar-brand" href="index.html">Home</a>
+            <span>Welcome, <?php echo $_SESSION['admin_logged_in']; ?></span>
+            <a href="logout.php">Logout</a>
         </div>
     </nav>
 
     <div class="container">
-        <h1 class="mt-5">Display Data</h1>
+        <!--<h1 class="mt-5">Display Data</h1>-->
         <div class="filters mt-3">
             <form method="get">
                 <div class="row g-3">
@@ -170,6 +237,11 @@ $result = $conn->query($sql);
                     <?php
                     if ($result->num_rows > 0) {
                         $serialNumber = 1;
+                        $totalAmount = 0;
+                        $totalTotalAmount = 0;
+                        $totalRvd = 0;
+                        $totalPending = 0;
+                        
                         while ($row = $result->fetch_assoc()) {
                             echo "<tr>";
                             echo "<td>" . $serialNumber . "</td>";
@@ -186,15 +258,38 @@ $result = $conn->query($sql);
                             echo "<td>" . (isset($row['Pending']) ? $row['Pending'] : '') . "</td>";
                             echo "<td>" . $row['remark'] . "</td>";
                             echo "<td>
-                                    <form method='post' class='d-inline'>
-                                        <input type='hidden' name='delete_id' value='" . $row['id'] . "'>
-                                        <button type='submit' name='delete' class='btn btn-danger btn-sm'>Delete</button>
-                                    </form>
-                                    <a href='edit_entry.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm'>Edit</a>
-                                  </td>";
-                            echo "</tr>";
+        <form method='post' class='d-inline'>
+            <input type='hidden' name='delete_id' value='" . $row['id'] . "'>
+            <button type='submit' name='delete' class='btn btn-danger btn-sm delete-button'>Delete</button>
+        </form>
+        <a href='edit_entry.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm edit-button'>Edit</a>
+      </td>";
+echo "</tr>";
                             $serialNumber++;
+                            
+                            $totalAmount += floatval($row['amount']);
+                            $totalTotalAmount += floatval($row['total_amount']);
+                            $totalRvd += floatval($row['RVD']);
+                            $totalPending += floatval($row['Pending']);
                         }
+                        
+                        // Display the aggregation row
+                        echo "<tr class='table-secondary'>";
+                        echo "<td></td>";
+                        echo "<td></td>";
+                        echo "<td><b>Total</b></td>";
+                        echo "<td></td>";
+                        echo "<td></td>";
+                        echo "<td></td>";
+                        echo "<td><b>$totalAmount</b></td>";
+                        echo "<td></td>";
+                        echo "<td></td>";
+                        echo "<td><b>$totalTotalAmount</b></td>";
+                        echo "<td><b>$totalRvd</b></td>";
+                        echo "<td><b>$totalPending</b></td>";
+                        echo "<td></td>";
+                        echo "<td></td>";
+                        echo "</tr>";
                     } else {
                         echo "<tr><td colspan='14'>No data available</td></tr>";
                     }
@@ -202,9 +297,15 @@ $result = $conn->query($sql);
                 </tbody>
             </table>
         </div>
-        <!-- Inside the <div class="mt-3"> section -->
-<a href="print_page.php<?php echo $filterQuery; ?>" class="btn btn-primary">Print</a>
-
+        
+       <div class="mt-3">
+            <button class="btn btn-primary print-button" onclick="toggleElementsForPrint()">Export</button>
+            <button class="btn btn-primary no-print" onclick="printTableWithSettings()">Print with Settings</button>
+                    <button onclick="window.print();" class="btn btn-secondary no0-print">Print Page</button>
+        </div>
+    </div>
+    </div>
+        
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     </div>
 </body>
