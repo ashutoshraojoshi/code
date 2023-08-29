@@ -63,7 +63,7 @@ $result = $conn->query($sql);
     <title>Display Data</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
-   body {
+        body {
             padding: 20px;
         }
         .navbar {
@@ -81,9 +81,10 @@ $result = $conn->query($sql);
         }
         th, td {
             white-space: nowrap;
+            text-align: center;
         }
-        .no-print{
-            display:none;
+        .no-print {
+            display: none;
         }
         
         @media print {
@@ -93,7 +94,7 @@ $result = $conn->query($sql);
         }
     </style>
     
-   <script>
+    <script>
         function toggleElementsForPrint() {
             var navbar = document.querySelector('.navbar');
             var filters = document.querySelector('.filters');
@@ -104,9 +105,8 @@ $result = $conn->query($sql);
             if (navbar.style.display === 'none') {
                 navbar.style.display = 'block';
                 filters.style.display = 'block';
-                printButton.textContent = 'Print';
+                printButton.textContent = 'Export';
                 
-                // Make edit and delete buttons visible again
                 editButtons.forEach(function(button) {
                     button.style.display = 'inline-block';
                 });
@@ -118,13 +118,18 @@ $result = $conn->query($sql);
                 filters.style.display = 'none';
                 printButton.textContent = 'Back to View';
                 
-                // Hide edit and delete buttons when printing
                 editButtons.forEach(function(button) {
                     button.style.display = 'none';
                 });
                 deleteButtons.forEach(function(button) {
                     button.style.display = 'none';
                 });
+            }
+        }
+        
+        function confirmDelete(event) {
+            if (!confirm("Are you sure you want to delete this entry?")) {
+                event.preventDefault();
             }
         }
         
@@ -138,7 +143,6 @@ $result = $conn->query($sql);
             document.body.innerHTML = originalContent;
         }
     </script>
-
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -150,7 +154,6 @@ $result = $conn->query($sql);
     </nav>
 
     <div class="container">
-        <!--<h1 class="mt-5">Display Data</h1>-->
         <div class="filters mt-3">
             <form method="get">
                 <div class="row g-3">
@@ -255,24 +258,24 @@ $result = $conn->query($sql);
                             echo "<td>" . $row['size'] . "</td>";
                             echo "<td>" . $row['total_amount'] . "</td>";
                             echo "<td>" . (isset($row['RVD']) ? $row['RVD'] : '') . "</td>";
-                            echo "<td>" . (isset($row['Pending']) ? $row['Pending'] : '') . "</td>";
+                            echo "<td>" . (isset($row['Pending']) ? ($row['RVD'] > 0 || is_null($row['RVD']) ? max(0, $row['total_amount'] - $row['RVD']) : $row['Pending']) : '') . "</td>";
                             echo "<td>" . $row['remark'] . "</td>";
                             echo "<td>
-        <form method='post' class='d-inline'>
-            <input type='hidden' name='delete_id' value='" . $row['id'] . "'>
-            <button type='submit' name='delete' class='btn btn-danger btn-sm delete-button'>Delete</button>
-        </form>
-        <a href='edit_entry.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm edit-button'>Edit</a>
-      </td>";
-echo "</tr>";
+                                    <form method='post' class='d-inline'>
+                                        <input type='hidden' name='delete_id' value='" . $row['id'] . "'>
+                                        <button type='submit' name='delete' class='btn btn-danger btn-sm delete-button'>Delete</button>
+                                    </form>
+                                    <a href='edit_entry.php?id=" . $row['id'] . "' class='btn btn-primary btn-sm edit-button'>Edit</a>
+                                </td>";
+                            echo "</tr>";
                             $serialNumber++;
-                            
+
                             $totalAmount += floatval($row['amount']);
                             $totalTotalAmount += floatval($row['total_amount']);
                             $totalRvd += floatval($row['RVD']);
-                            $totalPending += floatval($row['Pending']);
+                            $totalPending += floatval(isset($row['Pending']) ? ($row['RVD'] > 0 || is_null($row['RVD']) ? max(0, $row['total_amount'] - $row['RVD']) : $row['Pending']) : 0);
                         }
-                        
+
                         // Display the aggregation row
                         echo "<tr class='table-secondary'>";
                         echo "<td></td>";
@@ -298,15 +301,13 @@ echo "</tr>";
             </table>
         </div>
         
-       <div class="mt-3">
+        <div class="mt-3">
             <button class="btn btn-primary print-button" onclick="toggleElementsForPrint()">Export</button>
             <button class="btn btn-primary no-print" onclick="printTableWithSettings()">Print with Settings</button>
-                    <button onclick="window.print();" class="btn btn-secondary no0-print">Print Page</button>
+            <button onclick="window.print();" class="btn btn-secondary no0-print">Print Page</button>
         </div>
     </div>
-    </div>
-        
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
